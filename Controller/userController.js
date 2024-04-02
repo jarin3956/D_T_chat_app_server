@@ -62,11 +62,24 @@ const friends = async (req,res) => {
     }
 }
 
+const avathar = async (req,res) => {
+    try {
+        console.log('Hai first');
+        let userId = req.decoded;
+        let newImage = req.body.image;
+        const result = await userService.updateImage(userId,newImage);
+        res.status(result.status).json({ message: result.message });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+}
+
 module.exports = {
     userRegister,
     userLogin,
     findFriends,
     addFriend,
     userProfile,
-    friends
+    friends,
+    avathar
 };

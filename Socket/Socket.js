@@ -4,11 +4,13 @@ const MessageData = require('../Model/messageModel');
 
 
 function createGroupChatRoom(friendIds) {
-    const concatenatedString = friendIds.join('-'); 
+    const concatenatedString = friendIds.join('-');
     const hash = crypto.createHash('sha1').update(concatenatedString).digest('hex');
     const chatRoomId = hash.substring(0, 20);
     return chatRoomId;
 }
+
+
 
 function initializeSocket(server) {
     const io = new Server(server, { cors: true });
@@ -25,7 +27,8 @@ function initializeSocket(server) {
         socket.on('addFriendToChat', ({ friendId }) => {
             console.log(`User added: ${friendId}`)
         });
-        socket.on('startGroupChat', ({ friendIds, iUser,iUserId }) => {
+
+        socket.on('startGroupChat', ({ friendIds, iUser, iUserId }) => {
             const chatRoomId = createGroupChatRoom(friendIds);
             socket.join(chatRoomId);
             friendIds.forEach((friendId) => {
@@ -42,13 +45,13 @@ function initializeSocket(server) {
                 io.to(initiatorSocketId).emit('groupChatStarted', { chatRoomId });
             }
         });
-        socket.on('usr-joined-chat',({ theId,theName,chatRoomId }) => {
+        socket.on('usr-joined-chat', ({ theId, theName, chatRoomId }) => {
             io.to(chatRoomId).emit('user-entered', theName);
         });
-        socket.on('usr-rej-chat',({ theId,theName,chatRoomId }) => {
+        socket.on('usr-rej-chat', ({ theId, theName, chatRoomId }) => {
             io.to(chatRoomId).emit('user-rejected', theName);
         });
-        
+
         socket.on('send-msg', async ({ msg, roomId, userName }) => {
             try {
                 const message = {
@@ -57,16 +60,16 @@ function initializeSocket(server) {
                     createdAt: new Date()
                 };
                 const savedMessage = await MessageData.findOneAndUpdate(
-                    { groupId: roomId }, 
-                    { $push: { messageData: message } }, 
-                    { upsert: true, new: true } 
+                    { groupId: roomId },
+                    { $push: { messageData: message } },
+                    { upsert: true, new: true }
                 );
                 io.to(roomId).emit('new-msg', savedMessage.messageData);
             } catch (error) {
                 console.error('Error saving message:', error);
             }
         });
-        
+
         socket.on('join-chat', async (roomId) => {
             try {
                 const messages = await MessageData.findOne({ groupId: roomId });
@@ -78,9 +81,19 @@ function initializeSocket(server) {
             }
         });
 
-        socket.on('disconnect-chat', () => {
+        socket.on('typing', ({roomId, tUser}) => {
+            io.to(roomId).emit('user-typing', tUser);
+            console.log(tUser,"typing"); 
+        });
+
+        socket.on('stop-typing', (roomId) => {
+            io.to(roomId).emit('usr-st-typing');
+        });
+
+        socket.on('disconnect-chat', ({roomId,dUser}) => {
             console.log(`User disconnected: ${socket.id}`);
             connectedUsers.delete(socket.id);
+            io.to(roomId).emit('usr-offline',dUser);
         });
     })
 }

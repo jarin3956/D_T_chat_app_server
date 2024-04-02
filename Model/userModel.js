@@ -21,9 +21,9 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    token: {
+    image: {
         type: String,
-        default: ''
+        default: '/logo192.png'
     },
     friends: [
         {

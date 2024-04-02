@@ -134,11 +134,27 @@ const findFriends = async (ud) => {
     }
 }
 
+const updateImage = async (uId,img) => {
+    try {
+        console.log('hai image update');
+        let user = await userData.findByIdAndUpdate(uId.userId, { image: img }, { new: true });
+        if (user) {
+            console.log('image updated');
+            return { status: 200, message: 'Image updated successfull' };
+        } else {
+            return { status: 400, message: 'Cannot find user data' };
+        }
+    } catch (error) {
+        throw error;
+    }
+}
+
 module.exports = {
     registerUser,
     loginUser,
     findNewFriends,
     addNewFriend,
     findProfile,
-    findFriends
+    findFriends,
+    updateImage
 };
